@@ -12,6 +12,8 @@ WORKDIR /src
 COPY ["Api/Api.csproj", "Api/"]
 RUN dotnet restore "./Api/Api.csproj"
 COPY . .
+COPY ["../Application/Application.csproj", "."]
+COPY ["../Models/Models.csproj", "."]
 WORKDIR "/src/Api"
 RUN dotnet build "./Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 

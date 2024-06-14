@@ -1,3 +1,6 @@
+using Application.Services.ServiceBusMessaging.ServiceBusConsumerWorker;
+using Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +9,9 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<IServiceBusTopicSubscription, ServiceBusTopicSubscription>();
+builder.Services.AddHostedService<ServiceBusConsumerWorker>();
 
 var app = builder.Build();
 
