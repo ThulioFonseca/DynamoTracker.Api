@@ -1,5 +1,7 @@
-using Application.Services.ServiceBusMessaging.ServiceBusConsumerWorker;
-using Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription;
+using Application.Services.ServiceBusMessaging.ServiceBusQueueConsumerWorker;
+using Application.Services.ServiceBusMessaging.ServiceBusQueueProcessor;
+using Application.Services.ServiceBusMessaging.ServiceBusTopicConsumerWorker;
+using Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +12,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<IServiceBusTopicSubscription, ServiceBusTopicSubscription>();
-builder.Services.AddHostedService<ServiceBusConsumerWorker>();
+builder.Services.AddSingleton<IServiceBusTopicProcessor, ServiceBusTopicProcessor>();
+builder.Services.AddSingleton<IServiceBusQueueProcessor, ServiceBusQueueProcessor>();
+
+builder.Services.AddHostedService<ServiceBusTopicConsumerWorker>();
+builder.Services.AddHostedService<ServiceQueueConsumerWorker>();
+
 
 var app = builder.Build();
 

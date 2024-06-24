@@ -1,6 +1,6 @@
-﻿namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
+﻿namespace Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor
 {
-    public interface IServiceBusTopicSubscription
+    public interface IServiceBusTopicProcessor
     {
         Task PrepareFiltersAndHandleMessages();
         Task CloseSubscriptionAsync();

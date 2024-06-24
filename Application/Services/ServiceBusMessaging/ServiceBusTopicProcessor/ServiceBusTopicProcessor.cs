@@ -3,9 +3,9 @@ using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
+namespace Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor
 {
-    public class ServiceBusTopicSubscription : IServiceBusTopicSubscription
+    public class ServiceBusTopicProcessor : IServiceBusTopicProcessor
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger _logger;
@@ -13,9 +13,9 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
         private readonly ServiceBusAdministrationClient _adminClient;
         private ServiceBusProcessor _processor;
 
-        public ServiceBusTopicSubscription(
+        public ServiceBusTopicProcessor(
             IConfiguration configuration,
-            ILogger<ServiceBusTopicSubscription> logger)
+            ILogger<ServiceBusTopicProcessor> logger)
         {
             _configuration = configuration;
             _logger = logger;
@@ -36,16 +36,22 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
             var topic = _configuration["ServiceBus:TopicName"];
             var subscription = _configuration["ServiceBus:SubscriptionName"];
 
-            _processor = _client.CreateProcessor(topic, subscription, _serviceBusProcessorOptions);
-            _processor.ProcessMessageAsync += ProcessMessagesAsync;
-            _processor.ProcessErrorAsync += ProcessErrorAsync;
+            try
+            {
+                _processor = _client.CreateProcessor(topic, subscription, _serviceBusProcessorOptions);
+                _processor.ProcessMessageAsync += ProcessMessagesAsync;
+                _processor.ProcessErrorAsync += ProcessErrorAsync;
 
-            await RemoveDefaultFilters();
-            await AddFilters();
+                await RemoveDefaultFilters();
+                await AddFilters();
 
-            await _processor.StartProcessingAsync().ConfigureAwait(false);
+                await _processor.StartProcessingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred: {ex.GetType().Name}. Details: {ex.Message}");
+            }
         }
-
         private async Task RemoveDefaultFilters()
         {
             try
@@ -71,7 +77,6 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
                 _logger.LogWarning(ex.ToString());
             }
         }
-
         private async Task AddFilters()
         {
             try
@@ -101,7 +106,6 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
                 _logger.LogWarning(ex.ToString());
             }
         }
-
         private async Task ProcessMessagesAsync(ProcessMessageEventArgs args)
         {
             //var myPayload = args.Message.Body.ToObjectFromJson<Message>();
@@ -111,7 +115,6 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
             //await _processData.Process(myPayload).ConfigureAwait(false);
             await args.CompleteMessageAsync(args.Message).ConfigureAwait(false);
         }
-
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
         {
             _logger.LogError(arg.Exception, "Message handler encountered an exception");
@@ -121,7 +124,6 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
 
             return Task.CompletedTask;
         }
-
         public async ValueTask DisposeAsync()
         {
             if (_processor != null)
@@ -134,7 +136,6 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicSubscription
                 await _client.DisposeAsync().ConfigureAwait(false);
             }
         }
-
         public async Task CloseSubscriptionAsync()
         {
             await _processor!.CloseAsync().ConfigureAwait(false);
