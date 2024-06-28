@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Services.ServiceBusMessaging.ServiceBusQueueProcessor
+namespace Application.Services.ServiceBusMessaging.Processors.ServiceBusQueueProcessor
 {
     public class ServiceBusQueueProcessor : IServiceBusQueueProcessor
     {
@@ -49,24 +49,24 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusQueueProcessor
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"An error occurred: {ex.GetType().Name}. Details: {ex.Message}");
+                _logger.LogError("An error occurred: {ex_type}. Details: {ex_message}", ex.GetType().Name, ex.Message);
             }
         }
         private async Task ProcessMessagesAsync(ProcessMessageEventArgs args)
         {
             //var myPayload = args.Message.Body.ToObjectFromJson<Message>();
-            var myPayload = args.Message.Body.ToString();
+            var message = args.Message.Body.ToString();
 
-            _logger.LogInformation("Received message: {myPayload}", myPayload);
+            _logger.LogInformation("Received message: {message}", message);
             //await _processData.Process(myPayload).ConfigureAwait(false);
             await args.CompleteMessageAsync(args.Message).ConfigureAwait(false);
         }
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
         {
-            _logger.LogError(arg.Exception, "Message handler encountered an exception");
-            _logger.LogDebug($"- ErrorSource: {arg.ErrorSource}");
-            _logger.LogDebug($"- Entity Path: {arg.EntityPath}");
-            _logger.LogDebug($"- FullyQualifiedNamespace: {arg.FullyQualifiedNamespace}");
+            _logger.LogError("Message handler encountered an exception: {ex}", arg.Exception);
+            _logger.LogDebug("- ErrorSource: {ErrorSource}", arg.ErrorSource);
+            _logger.LogDebug("- Entity Path: {EntityPath}", arg.EntityPath);
+            _logger.LogDebug("- FullyQualifiedNamespace: {FullyQualifiedNamespace}", arg.FullyQualifiedNamespace);
 
             return Task.CompletedTask;
         }

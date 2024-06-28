@@ -1,4 +1,4 @@
-﻿namespace Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor
+﻿namespace Application.Services.ServiceBusMessaging.Processors.ServiceBusTopicProcessor
 {
     public interface IServiceBusTopicProcessor
     {

@@ -3,7 +3,7 @@ using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor
+namespace Application.Services.ServiceBusMessaging.Processors.ServiceBusTopicProcessor
 {
     public class ServiceBusTopicProcessor : IServiceBusTopicProcessor
     {
@@ -42,85 +42,45 @@ namespace Application.Services.ServiceBusMessaging.ServiceBusTopicProcessor
                 _processor.ProcessMessageAsync += ProcessMessagesAsync;
                 _processor.ProcessErrorAsync += ProcessErrorAsync;
 
-                await RemoveDefaultFilters();
-                await AddFilters();
+                await ConfigureDefaultFilters();
 
                 await _processor.StartProcessingAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"An error occurred: {ex.GetType().Name}. Details: {ex.Message}");
+                _logger.LogError("An error occurred: {ex_Name}. Details: {ex_Message}", ex.GetType().Name, ex.Message);
             }
         }
-        private async Task RemoveDefaultFilters()
+        private async Task ConfigureDefaultFilters()
         {
             try
             {
                 var rules = _adminClient.GetRulesAsync(_configuration["ServiceBus:TopicName"], _configuration["ServiceBus:SubscriptionName"]);
                 var ruleProperties = new List<RuleProperties>();
-                await foreach (var rule in rules)
-                {
-                    ruleProperties.Add(rule);
-                }
 
-                //foreach (var rule in ruleProperties)
-                //{
-                //    if (rule.Name == "GoalsGreaterThanSeven")
-                //    {
-                //        await _adminClient.DeleteRuleAsync(TOPIC_PATH, SUBSCRIPTION_NAME, "GoalsGreaterThanSeven")
-                //            .ConfigureAwait(false);
-                //    }
-                //}
+                await foreach (var rule in rules)
+                    ruleProperties.Add(rule);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.ToString());
-            }
-        }
-        private async Task AddFilters()
-        {
-            try
-            {
-                var rules = _adminClient.GetRulesAsync(_configuration["ServiceBus:TopicName"], _configuration["ServiceBus:SubscriptionName"])
-                    .ConfigureAwait(false);
-
-                var ruleProperties = new List<RuleProperties>();
-                await foreach (var rule in rules)
-                {
-                    ruleProperties.Add(rule);
-                }
-
-                //if (!ruleProperties.Any(r => r.Name == "GoalsGreaterThanSeven"))
-                //{
-                //    CreateRuleOptions createRuleOptions = new CreateRuleOptions
-                //    {
-                //        Name = "GoalsGreaterThanSeven",
-                //        Filter = new SqlRuleFilter("goals > 7")
-                //    };
-                //    await _adminClient.CreateRuleAsync(TOPIC_PATH, SUBSCRIPTION_NAME, createRuleOptions)
-                //        .ConfigureAwait(false);
-                //}
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex.ToString());
+                _logger.LogWarning("Fail to configure filters: {ex_Name}. Details: {ex_Message}", ex.GetType().Name, ex.Message);
             }
         }
         private async Task ProcessMessagesAsync(ProcessMessageEventArgs args)
         {
             //var myPayload = args.Message.Body.ToObjectFromJson<Message>();
-            var myPayload = args.Message.Body.ToString();
+            var message = args.Message.Body.ToString();
 
-            _logger.LogInformation("Received message: {myPayload}", myPayload);
+            _logger.LogInformation("Received message: {myPayload}", message);
             //await _processData.Process(myPayload).ConfigureAwait(false);
             await args.CompleteMessageAsync(args.Message).ConfigureAwait(false);
         }
         private Task ProcessErrorAsync(ProcessErrorEventArgs arg)
         {
-            _logger.LogError(arg.Exception, "Message handler encountered an exception");
-            _logger.LogDebug($"- ErrorSource: {arg.ErrorSource}");
-            _logger.LogDebug($"- Entity Path: {arg.EntityPath}");
-            _logger.LogDebug($"- FullyQualifiedNamespace: {arg.FullyQualifiedNamespace}");
+            _logger.LogError("Message handler encountered an exception: {ex}", arg.Exception);
+            _logger.LogDebug("- ErrorSource: {ErrorSource}", arg.ErrorSource);
+            _logger.LogDebug("- Entity Path: {EntityPath}", arg.EntityPath);
+            _logger.LogDebug("- FullyQualifiedNamespace: {FullyQualifiedNamespace}", arg.FullyQualifiedNamespace);
 
             return Task.CompletedTask;
         }
