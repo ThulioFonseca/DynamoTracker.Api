@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -12,20 +13,13 @@ namespace Application.Services.ServiceBusMessaging.Processors.ServiceBusQueuePro
         private ServiceBusProcessor _processor;
 
         public ServiceBusQueueProcessor(
+            IAzureClientFactory<ServiceBusClient> serviceBusClientFactory,
             IConfiguration configuration,
             ILogger<ServiceBusQueueProcessor> logger)
         {
             _configuration = configuration;
             _logger = logger;
-
-            var connectionString = _configuration["ServiceBus:ConnectionString"];
-
-            ServiceBusClientOptions clientOptions = new()
-            {
-                TransportType = ServiceBusTransportType.AmqpWebSockets
-            };
-
-            _client = new ServiceBusClient(connectionString, clientOptions);
+            _client = serviceBusClientFactory.CreateClient("service-bus-client");
         }
 
         public async Task HandleMessages()

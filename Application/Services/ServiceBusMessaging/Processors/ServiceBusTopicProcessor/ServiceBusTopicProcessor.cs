@@ -1,5 +1,6 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -14,15 +15,17 @@ namespace Application.Services.ServiceBusMessaging.Processors.ServiceBusTopicPro
         private ServiceBusProcessor _processor;
 
         public ServiceBusTopicProcessor(
+            IAzureClientFactory<ServiceBusClient> serviceBusClientFactory,
+            ServiceBusAdministrationClient serviceBusAdministrationClient,
             IConfiguration configuration,
             ILogger<ServiceBusTopicProcessor> logger)
         {
+            var connectionString = _configuration.GetConnectionString("ServiceBus");
+
             _configuration = configuration;
             _logger = logger;
-
-            var connectionString = _configuration["ServiceBus:ConnectionString"];
-            _client = new ServiceBusClient(connectionString);
-            _adminClient = new ServiceBusAdministrationClient(connectionString);
+            _client = serviceBusClientFactory.CreateClient("service-bus-client");
+            _adminClient = serviceBusAdministrationClient;
         }
 
         public async Task PrepareFiltersAndHandleMessages()

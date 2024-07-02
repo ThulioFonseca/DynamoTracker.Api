@@ -2,6 +2,9 @@ using Application.Services.ServiceBusMessaging.Processors.ServiceBusQueueProcess
 using Application.Services.ServiceBusMessaging.Processors.ServiceBusTopicProcessor;
 using Application.Services.ServiceBusMessaging.Workers.ServiceBusQueueConsumerWorker;
 using Application.Services.ServiceBusMessaging.Workers.ServiceBusTopicConsumerWorker;
+using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Azure;
+
 using Serilog;
 
 namespace Api
@@ -11,7 +14,7 @@ namespace Api
         private static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                .MinimumLevel.Information()
                 .WriteTo.Console()
                 .CreateLogger();
 
@@ -26,9 +29,20 @@ namespace Api
             builder.Services.AddSingleton<IServiceBusTopicProcessor, ServiceBusTopicProcessor>();
             builder.Services.AddSingleton<IServiceBusQueueProcessor, ServiceBusQueueProcessor>();
 
+            builder.Services.AddAzureClients(clientBuilder =>
+            {
+                clientBuilder.AddServiceBusClient(builder.Configuration.GetConnectionString("ServiceBus"))
+                .WithName("service-bus-client")
+                .ConfigureOptions(options =>
+                {
+                    options.TransportType = ServiceBusTransportType.AmqpWebSockets;
+                });
+
+                clientBuilder.AddServiceBusAdministrationClient(builder.Configuration.GetConnectionString("ServiceBus"));
+            });
+
             //builder.Services.AddHostedService<ServiceBusTopicConsumerWorker>();
             builder.Services.AddHostedService<ServiceQueueConsumerWorker>();
-
 
             var app = builder.Build();
 
